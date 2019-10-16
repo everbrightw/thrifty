@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, abort, request
+from flask import Flask
 
 app = Flask(__name__)
 
@@ -9,7 +9,7 @@ def index():
 
 
 @app.route('/sample', methods=['GET'])
-def sample_function(actor_name):
+def sample_function(p):
     return 'sample function'
 
 
