@@ -1,0 +1,25 @@
+{
+  "name": "thrifty",
+  "version": "1.0.0",
+  "description": "cs411 second handed web app project",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/everbrightw/thrifty.git"
+  },
+  "keywords": [
+    "thrifty"
+  ],
+  "author": "yw",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/everbrightw/thrifty/issues"
+  },
+  "homepage": "https://github.com/everbrightw/thrifty#readme",
+  "devDependencies": {
+    "webpack": "^4.41.2"
+  }
+}
