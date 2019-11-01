@@ -10,9 +10,9 @@ import ssl
 app = Flask(__name__)
 
 # getting sample json file
-with open('/Users/yusenwang/thrifty/flask-backend/data/entity_sample.json',
-          encoding='utf-8') as json_file:
-    data = json.load(json_file)
+# with open('/Users/yusenwang/thrifty/flask-backend/data/entity_sample.json',
+#           encoding='utf-8') as json_file:
+#     data = json.load(json_file)
 
 # MongoDB configuration
 
@@ -30,7 +30,7 @@ collection = db["Entity"]
 mysql = MySQL()
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'asdfghjkl;\''
+app.config['MYSQL_DATABASE_PASSWORD'] = 'Zzk*980515'
 app.config['MYSQL_DATABASE_DB'] = 'thrifty_users'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
@@ -54,17 +54,17 @@ def test_get_all():
     return "get"
 
 
-@app.route('/insert_sample', methods=['POST'])
-def insert_sample_entity():
-    """
-    insert entity api calls
-    :return:
-    """
-    # var = {"_id": 1, "name": "wys", "score": 5}
-    # collection.insert_one(var)
-    for it in data:
-        collection.insert_one(it)
-    return 'added'
+# @app.route('/insert_sample', methods=['POST'])
+# def insert_sample_entity():
+#     """
+#     insert entity api calls
+#     :return:
+#     """
+#     # var = {"_id": 1, "name": "wys", "score": 5}
+#     # collection.insert_one(var)
+#     for it in data:
+#         collection.insert_one(it)
+#     return 'added'
 
 
 @app.route('/delete/<input_id>', methods=['DELETE'])
@@ -166,6 +166,58 @@ def insert_user():
     conn.commit()
     conn.close()
     return jsonify({'user': user}), 201
+
+
+# Getting information for a user
+@app.route('/thrifty/api/v1.0/users/<uid>', methods=['GET'])
+def get_user(uid):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Users WHERE id=%s", uid)
+    data = cursor.fetchall()
+    if len(data) == 0:
+        return abort(404)
+    result = {
+        'id': data[0][0],
+        'firstname': data[0][1],
+        'lastname': data[0][2],
+        'email': data[0][3],
+        'password': data[0][5],
+        'phone': data[0][4]
+    }
+    return jsonify(result)
+
+
+# Updating the information of a user
+@app.route('/thrifty/api/v1.0/users/<uid>', methods=['PUT'])
+def update_users(uid):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Users WHERE id=%s", (uid))
+    data = cursor.fetchall()
+    if len(data) == 0:
+        abort(404)
+    data = {
+        'firstname': data[0][1],
+        'lastname': data[0][2],
+        'email': data[0][3],
+        'password': data[0][5],
+        'phone': data[0][4]
+    }
+    if (not request.json) or ((not 'password' in request.json) and (not 'email' in request.json)):
+        abort(400)
+    for key in request.json:
+        print(key)
+        if key == 'email':
+            cursor.execute("UPDATE Users SET email = %s WHERE id = %s", (request.json[key], uid))
+        if key == 'password':
+            cursor.execute("UPDATE Users SET password = %s WHERE id = %s", (request.json[key], uid))
+        if key == 'phone':
+            cursor.execute("UPDATE Users SET phone = %s WHERE id = %s", (request.json[key], uid))
+        data[key] = request.json[key]
+    conn.commit()
+    conn.close()
+    return jsonify(data), 201
 
 
 if __name__ == '__main__':
