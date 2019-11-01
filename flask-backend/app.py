@@ -41,33 +41,17 @@ def index():
     return render_template("index.html", token="hello flask react")
 
 
-@app.route('/all', methods=['GET'])
-def test_get_all():
-    # framework = mongo.db.framework
-    #
-    # output = []
-    #
-    # for q in framework.find():
-    #     output.append({'name': q['name'], 'beds': q['beds']})
-    #
-    # return jsonify({'result': output})
-    return "get"
-
-
-@app.route('/insert_sample', methods=['POST'])
-def insert_sample_entity():
+@app.route('/thrifty/api/v1.0/entity/insert_one', methods=['POST'])
+def insert_one_entity():
     """
-    insert entity api calls
+    insert entity api call
     :return:
     """
-    # var = {"_id": 1, "name": "wys", "score": 5}
-    # collection.insert_one(var)
-    for it in data:
-        collection.insert_one(it)
-    return 'added'
+    collection.insert_one(request.json)
+    return jsonify(request.json)
 
 
-@app.route('/delete/<input_id>', methods=['DELETE'])
+@app.route('/thrifty/api/v1.0/entity/delete/<input_id>', methods=['DELETE'])
 def delete_entity(input_id):
     """
     delete entity by id
@@ -90,33 +74,69 @@ def delete_entity(input_id):
     return ret
 
 
-@app.route('/search/name/<item_name>', methods=['GET'])
-def search_item(item_name):
+@app.route('/thrifty/api/v1.0/entity/search', methods=['GET'])
+def search_item_by_attr():
     """
-    search items by item name
-    :param item_name:
+    search items by item name, need to pass a json body
     :return:
     """
-    # find all item with same item_name
-    results = collection.find({'name': item_name})
+
+    # TODO implement multi filter
+    key = ""
+    for k in request.json:
+        key = k
+    results = collection.find({key: request.json.get(key)})
+    # find all item with same attribute
 
     # parse all user into json
     all_found = [{
-        '_id': result['_id'],
-        'name': result['name'],
-        'score': result['score']
+        "_id": result["_id"],
+        "name": result["name"],
+        "contact": result["contact"],
+        "area": result["area"],
+        "description": result["description"],
+        "seller": result["seller"],
+        "condition": result["condition"],
+        "price": result["price"],
+        "date": result["date"]
     } for result in results]
 
     return jsonify(all_found)
 
 
-@app.route('/search/all', methods=['POST'])
+@app.route('/thrifty/api/v1.0/entity/display', methods=['GET'])
 def list_all():
     """
     list all data in our database
     :return:
     """
-    return "all json data from data base"
+    entities = collection.find()
+    all_entity = [{
+        "_id": entity["_id"],
+        "name": entity["name"],
+        "contact": entity["contact"],
+        "area": entity["area"],
+        "description": entity["description"],
+        "seller": entity["seller"],
+        "condition": entity["condition"],
+        "price": entity["price"],
+        "date": entity["date"]
+    } for entity in entities]
+
+    return jsonify(all_entity)
+
+
+@app.route('/thrifty/api/v1.0/entity/update', methods=['PUT'])
+def update_entity_by_id():
+    """
+    update database in our database by _id
+    :return:
+    """
+    # TODO implement multi filter
+    for key in request.json:
+        collection.update_one({"_id": request.json.get("_id")}, {"$set": {key: request.json.get(key)}})
+
+    return list_all()
 
 
 # mysql api calls
