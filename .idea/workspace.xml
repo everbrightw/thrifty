@@ -21,6 +21,13 @@
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -121,7 +128,12 @@
       <updated>1571193217388</updated>
       <workItem from="1571193219552" duration="2248000" />
       <workItem from="1572295585812" duration="11797000" />
+<<<<<<< HEAD
       <workItem from="1572566808416" duration="7945000" />
+=======
+      <workItem from="1572566808416" duration="3493000" />
+      <workItem from="1572570844092" duration="1795000" />
+>>>>>>> e157b8a5c39d334eace659cf8b3c31be9b06d655
     </task>
     <servers />
   </component>
@@ -146,7 +158,11 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/thrifty$app__1_.coverage" NAME="app (1) Coverage Results" MODIFIED="1572298806264" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/flask_backend" />
+<<<<<<< HEAD
     <SUITE FILE_PATH="coverage/thrifty$app__2_.coverage" NAME="app (2) Coverage Results" MODIFIED="1572574408549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/flask-backend" />
+=======
+>>>>>>> e157b8a5c39d334eace659cf8b3c31be9b06d655
     <SUITE FILE_PATH="coverage/thrifty$app.coverage" NAME="app Coverage Results" MODIFIED="1571195146493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/thrifty$app__2_.coverage" NAME="app (2) Coverage Results" MODIFIED="1572569885522" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/flask-backend" />
   </component>
 </project>
