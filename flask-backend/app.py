@@ -10,9 +10,9 @@ import ssl
 app = Flask(__name__)
 
 # getting sample json file
-# with open('/Users/yusenwang/thrifty/flask-backend/data/entity_sample.json',
-#           encoding='utf-8') as json_file:
-#     data = json.load(json_file)
+with open('/Users/yusenwang/thrifty/flask-backend/data/entity_sample.json',
+          encoding='utf-8') as json_file:
+    data = json.load(json_file)
 
 # MongoDB configuration
 
@@ -30,7 +30,7 @@ collection = db["Entity"]
 mysql = MySQL()
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'Zzk*980515'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'asdfghjkl;\''
 app.config['MYSQL_DATABASE_DB'] = 'thrifty_users'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
