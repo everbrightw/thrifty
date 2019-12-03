@@ -10,7 +10,7 @@ import ssl
 app = Flask(__name__)
 
 # getting sample json file
-with open('/Users/zhekunz2/Documents/cs411/thrifty/flask-backend/data/entity_sample.json',
+with open('/Users/yusenwang/thrifty/flask-backend/data/entity_sample.json',
           encoding='utf-8') as json_file:
     data = json.load(json_file)
 
