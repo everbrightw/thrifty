@@ -10,7 +10,7 @@ import ssl
 app = Flask(__name__)
 
 # getting sample json file
-with open('/Users/yusenwang/thrifty/flask-backend/data/entity_sample.json',
+with open('/Users/zhekunz2/Documents/cs411/thrifty/flask-backend/data/entity_sample.json',
           encoding='utf-8') as json_file:
     data = json.load(json_file)
 
@@ -24,15 +24,16 @@ cluster = MongoClient("mongodb://cs411thrifty:tfsat1102200@cluster0-shard-00-00-
 
 # setting up database and collection
 db = cluster["thrifty"]
-collection = db["Entity"]
+Entity = db["Entity"]
+WatchHistory = db["WatchHistory"]
 
 # Mysql Database configuration
 mysql = MySQL()
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'asdfghjkl;\''
-app.config['MYSQL_DATABASE_DB'] = 'thrifty_users'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+app.config['MYSQL_DATABASE_USER'] = 'admin'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'Zzk*980515'
+app.config['MYSQL_DATABASE_DB'] = 'thrifty'
+app.config['MYSQL_DATABASE_HOST'] = 'cs411.cnbpsgbaoain.us-east-2.rds.amazonaws.com'
 mysql.init_app(app)
 
 
@@ -48,7 +49,7 @@ def insert_one_entity():
     insert entity api call
     :return:
     """
-    collection.insert_one(request.json)
+    Entity.insert_one(request.json)
     return jsonify(request.json)
 
 
@@ -60,8 +61,8 @@ def delete_entity(input_id):
     :return:
     """
 
-    result = collection.find_one({"_id": input_id})
-    collection.delete_one({"_id": input_id})
+    result = Entity.find_one({"_id": input_id})
+    Entity.delete_one({"_id": input_id})
     ret = {
         "_id": result["_id"],
         "name": result["name"],
@@ -87,7 +88,7 @@ def search_item_by_attr():
     key = ""
     for k in request.json:
         key = k
-    results = collection.find({key: request.json.get(key)})
+    results = Entity.find({key: request.json.get(key)})
     # find all item with same attribute
 
     # parse all user into json
@@ -112,7 +113,7 @@ def list_all():
     list all data in our database
     :return:
     """
-    entities = collection.find()
+    entities = Entity.find()
     all_entity = [{
         "_id": entity["_id"],
         "name": entity["name"],
@@ -136,12 +137,12 @@ def update_entity_by_id():
     """
     # TODO implement multi filter
     for key in request.json:
-        collection.update_one({"_id": request.json.get("_id")}, {"$set": {key: request.json.get(key)}})
+        Entity.update_one({"_id": request.json.get("_id")}, {"$set": {key: request.json.get(key)}})
 
     return list_all()
 
 
-# mysql api calls
+####### mysql api calls ####################
 @app.route('/thrifty/api/v1.0/users', methods=['GET'])
 def get_all_users():
     conn = mysql.connect()
@@ -241,6 +242,21 @@ def update_users(uid):
     conn.close()
     return jsonify(data), 201
 
+# check login
+@app.route('/thrifty/api/v1.0/login/', methods=['POST'])
+def check_login():
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password FROM Users WHERE email=%s", (request.json['email']))
+    data = cursor.fetchall()
+    if len(data) == 0:
+        abort(404)
+    if data[0][0] == request.json['password']:
+        return 1
+    return 0
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+## SELECT * FROM Users NATRAUL JOIN WatchHistory Where id = userid group by userid
