@@ -154,13 +154,27 @@ def get_all_users():
     ret_data = []
     for i in range(len(data)):
         temp_data = {
-            "name": data[i][1] + " " + data[i][2],
+            "UserId": data[i][0],
+            "firstname": data[i][1],
+            "lastname": data[i][2],
             "email": data[i][3],
             "phone": data[i][4]
         }
         ret_data.append(temp_data)
     return jsonify(ret_data)
 
+@app.route('/thrifty/api/v1.0/users/<email>', methods=['GET'])
+def get_uid_by_email(email):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM Users where email=%s", email)
+    data = cursor.fetchall()
+    if len(data) == 0:
+        return abort(404)
+    ret_data = {
+        "UserId": data[0][0]
+    }
+    return jsonify(ret_data)
 
 @app.route('/thrifty/api/v1.0/users', methods=['POST'])
 def insert_user():
