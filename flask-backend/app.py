@@ -154,13 +154,27 @@ def get_all_users():
     ret_data = []
     for i in range(len(data)):
         temp_data = {
-            "name": data[i][1] + " " + data[i][2],
+            "UserId": data[i][0],
+            "firstname": data[i][1],
+            "lastname": data[i][2],
             "email": data[i][3],
             "phone": data[i][4]
         }
         ret_data.append(temp_data)
     return jsonify(ret_data)
 
+@app.route('/thrifty/api/v1.0/users/<email>', methods=['GET'])
+def get_uid_by_email(email):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM Users where email=%s", email)
+    data = cursor.fetchall()
+    if len(data) == 0:
+        return abort(404)
+    ret_data = {
+        "UserId": data[0][0]
+    }
+    return jsonify(ret_data)
 
 @app.route('/thrifty/api/v1.0/users', methods=['POST'])
 def insert_user():
@@ -252,11 +266,53 @@ def check_login():
     if len(data) == 0:
         abort(404)
     if data[0][0] == request.json['password']:
-        return 1
-    return 0
+        data = {
+            'result': 1
+        }
+        return jsonify(data), 201
+    data = {
+        'result': 0
+    }
+    return jsonify(data), 201
 
+
+# watchHistory
+@app.route('/thrifty/api/v1.0/watch_history/', methods=['POST'])
+def add_watch_history():
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO WatchHistory(UserId, EntityId, date) VALUES(%s, %s, %s)",
+                   (request.json['UserId'], request.json['EntityId'], request.json['date']))
+    data = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    history = {
+        'UserId': request.json['UserId'],
+        'EntityId': request.json['EntityId'],
+        'date': request.json['date']
+    }
+    return jsonify(history), 201
+
+@app.route('/thrifty/api/v1.0/watch_history/<uid>', methods=['GET'])
+def get_watch_history(uid):
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("Select * from WatchHistory where UserId = %s", uid)
+    data = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    ret_data = []
+    for i in range(len(data)):
+        temp_data = {
+            "UserId": data[i][0],
+            "EntityId": data[i][1],
+            "date": data[i][2]
+        }
+        ret_data.append(temp_data)
+    return jsonify(ret_data), 201
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.debug=True
+    app.run(host='0.0.0.0')
 
 ## SELECT * FROM Users NATRAUL JOIN WatchHistory Where id = userid group by userid
