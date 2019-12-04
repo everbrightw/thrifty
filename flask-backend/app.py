@@ -6,6 +6,7 @@ from flaskext.mysql import MySQL
 import os
 import pymongo
 import ssl
+from bson import ObjectId
 
 app = Flask(__name__)
 
@@ -41,6 +42,16 @@ app.config['MYSQL_DATABASE_DB'] = 'thrifty'
 app.config['MYSQL_DATABASE_HOST'] = 'cs411.cnbpsgbaoain.us-east-2.rds.amazonaws.com'
 mysql.init_app(app)
 
+### Advanced Function 1
+
+conn = mysql.connect()
+cursor = conn.cursor()
+cursor.execute("drop trigger if exists mytrigger")
+qrystr = "CREATE TRIGGER mytrigger BEFORE INSERT ON WatchHistory for each row begin IF ((select COUNT(*) from WatchHistory w where w.Entity=NEW.Entity) >= 10) and ((select COUNT(*) from Hottest h where h.EntityId=NEW.Entity)=0) THEN INSERT INTO Hottest(EntityId) VALUES(NEW.Entity); END IF; END"
+cursor.execute(qrystr)
+conn.commit()
+conn.close()
+##############
 
 @app.route('/')
 def index():
@@ -49,7 +60,7 @@ def index():
 
 # _id, name, price, condition, category, description, userid, date, picture
 
-@app.route('/thrifty/api/v1.0/entity/insert_one', methods=['POST'])
+@app.route('/thrifty/api/v1.0/entity/insert', methods=['POST'])
 def insert_one_entity():
     """
     insert entity api call
@@ -59,17 +70,39 @@ def insert_one_entity():
     print(request.json)
     Entity.insert_one(request.json)
     ret = {
+        "_id": str(result["_id"]),
         "name": result["name"],
         "userid": result["userid"],
         "description": result["description"],
         "condition": result["condition"],
         "category": result["category"],
         "price": result["price"],
-        "date": result["date"],
         "picture": result["picture"]
     }
     return ret
 
+@app.route('/thrifty/api/v1.0/entity/insert_many', methods=['POST'])
+def insert_many_entity():
+    """
+    insert entity api call
+    :return:
+    """
+    results = request.json
+    data = []
+    for result in results:
+        Entity.insert_one(i)
+        ret = {
+            "_id": str(result["_id"]),
+            "name": result["name"],
+            "userid": result["userid"],
+            "description": result["description"],
+            "condition": result["condition"],
+            "category": result["category"],
+            "price": result["price"],
+            "picture": result["picture"]
+        }
+        data.append(ret)
+    return jsonify(data), 201
 
 
 @app.route('/thrifty/api/v1.0/entity/delete/<input_id>', methods=['DELETE'])
@@ -78,16 +111,17 @@ def delete_entity(input_id):
     delete entity by id
     :return:
     """
+    print("delete")
     result = Entity.find_one({"_id": input_id})
     Entity.delete_one({"_id": input_id})
     ret = {
+        "_id": str(result["_id"]),
         "name": result["name"],
         "userid": result["userid"],
         "description": result["description"],
         "condition": result["condition"],
         "category": result["category"],
         "price": result["price"],
-        "date": result["date"],
         "picture": result["picture"]
     }
     return ret
@@ -104,49 +138,90 @@ def get_all_entities():
     # parse all user into json
     all_found = []
     for result in results:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
+        data = cursor.fetchall()
+        cursor.execute("Select email from Users where id=%s", result["userid"])
+        user = cursor.fetchall()
         all_found.append({
+            # "_id": str(result["_id"]),
             "name": result["name"],
-            "userid": result["userid"],
+            "email": user[0][0],
+            # "userId": result["userid"],
             "description": result["description"],
-            "condition": result["condition"],
+            # "condition": result["condition"],
             "category": result["category"],
             "price": result["price"],
-            "date": result["date"],
-            "picture": result["picture"]
+            "views": str(data[0][0])
+            # "picture": result["picture"]
         })
     return jsonify(all_found)
 
-# Search
-@app.route('/thrifty/api/v1.0/entity/search', methods=['GET'])
-def search_item_by_attr():
+@app.route('/thrifty/api/v1.0/entity/category/<category>', methods=['GET'])
+def get_entities_by_category(category):
     """
     search items by item name, need to pass a json body
     :return:
     """
-    #  implement multi filter
-    results = []
-    key = ""
-    for k in request.json:
-        key = k
-        value = request.json.get(key)
-        # regx = re.compile("^"+value+"^", re.IGNORECASE)
-        results.append(Entity.find({key: value}))
+    results = Entity.find({"category":category})
     # find all item with same attribute
 
     # parse all user into json
     all_found = []
-    for x in results:
-        for result in x:
-            all_found.append({
-                "name": result["name"],
-                "userid": result["userid"],
-                "description": result["description"],
-                "condition": result["condition"],
-                "category": result["category"],
-                "price": result["price"],
-                "date": result["date"],
-                "picture": result["picture"]
-            })
+    for result in results:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
+        data = cursor.fetchall()
+        cursor.execute("Select email from Users where id=%s", int(result["userid"]))
+        user = cursor.fetchall()
+        all_found.append({
+            # "_id": str(result["_id"]),
+            "name": result["name"],
+            "email": user[0][0],
+            # "userId": result["userid"],
+            "description": result["description"],
+            # "condition": result["condition"],
+            "category": result["category"],
+            "price": result["price"],
+            "views": str(data[0][0])
+            # "picture": result["picture"]
+        })
+    return jsonify(all_found)
+
+# Search
+@app.route('/thrifty/api/v1.0/entity/search/<name>', methods=['GET'])
+def search_item_by_name(name):
+    """
+    search items by item name
+    :return:
+    """
+    regx = re.compile(".*"+name+".*", re.IGNORECASE)
+    # regx = { "name": { "$regex": "*."+name+".*" } }
+    results=(Entity.find({"name": regx}))
+    # find all item with same attribute
+
+    # parse all user into json
+    all_found = []
+    for result in results:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
+        data = cursor.fetchall()
+        cursor.execute("Select email from Users where id=%s", result["userid"])
+        user = cursor.fetchall()
+        all_found.append({
+            # "_id": str(result["_id"]),
+            "name": result["name"],
+            "email": user[0][0],
+            "description": result["description"],
+            # "condition": result["condition"],
+            "category": result["category"],
+            "price": result["price"],
+            "views": str(data[0][0])
+            # "picture": result["picture"]
+        })
 
     return jsonify(all_found)
 
@@ -161,7 +236,7 @@ def update_entity_by_id():
     for key in request.json:
         Entity.update_one({"_id": request.json.get("_id")}, {"$set": {key: request.json.get(key)}})
 
-    return list_all()
+    return get_all_entities()
 
 
 ####### mysql api calls ####################
@@ -185,14 +260,14 @@ def get_all_users():
         ret_data.append(temp_data)
     return jsonify(ret_data)
 
-@app.route('/thrifty/api/v1.0/users/<email>', methods=['GET'])
+@app.route('/thrifty/api/v1.0/users/email/<email>', methods=['GET'])
 def get_uid_by_email(email):
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM Users where email=%s", email)
     data = cursor.fetchall()
     if len(data) == 0:
-        return abort(404)
+        return abort(401)
     ret_data = {
         "UserId": data[0][0]
     }
@@ -228,14 +303,15 @@ def insert_user():
 
 
 # Getting information for a user
-@app.route('/thrifty/api/v1.0/users/<uid>', methods=['GET'])
-def get_user(uid):
+@app.route('/thrifty/api/v1.0/users/uid/<uid>', methods=['GET'])
+def get_user_by_id(uid):
+    print("heressss")
     conn = mysql.connect()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Users WHERE id=%s", uid)
     data = cursor.fetchall()
     if len(data) == 0:
-        return abort(404)
+        return abort(401)
     result = {
         'id': data[0][0],
         'firstname': data[0][1],
@@ -283,13 +359,14 @@ def update_users(uid):
 def check_login():
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT password FROM Users WHERE email=%s", (request.json['email']))
+    cursor.execute("SELECT password, id FROM Users WHERE email=%s", (request.json['email']))
     data = cursor.fetchall()
     if len(data) == 0:
         abort(404)
     if data[0][0] == request.json['password']:
         data = {
-            'result': "isvalid"
+            'result': "isvalid",
+            'UserId': str(data[0][1])
         }
         return jsonify(data), 201
     data = {
@@ -300,19 +377,19 @@ def check_login():
 
 ########## watchHistory
 
-@app.route('/thrifty/api/v1.0/watch_history/', methods=['POST'])
+@app.route('/thrifty/api/v1.0/watch_history', methods=['POST'])
 def add_watch_history():
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO WatchHistory(UserId, EntityId, date) VALUES(%s, %s, %s)",
-                   (request.json['UserId'], request.json['EntityId'], request.json['date']))
+    result = Entity.find_one({"name": request.json['entity']})
+    cursor.execute("INSERT INTO WatchHistory(UserId, Entity) VALUES(%s, %s)",
+                   (request.json['userId'], str(result["_id"])))
     data = cursor.fetchall()
     conn.commit()
     conn.close()
     history = {
-        'UserId': request.json['UserId'],
-        'EntityId': request.json['EntityId'],
-        'date': request.json['date']
+        'UserId': request.json['userId'],
+        'Entity': request.json['entity'],
     }
     return jsonify(history), 201
 
@@ -328,8 +405,7 @@ def get_watch_history(uid):
     for i in range(len(data)):
         temp_data = {
             "UserId": data[i][0],
-            "EntityId": data[i][1],
-            "date": data[i][2]
+            "Entity": data[i][1],
         }
         ret_data.append(temp_data)
     return jsonify(ret_data), 201
@@ -337,88 +413,104 @@ def get_watch_history(uid):
 ################# Favorites
 ########## watchHistory
 
-@app.route('/thrifty/api/v1.0/favorites/', methods=['POST'])
-def add_favorite():
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO Favorites(UserId, EntityId) VALUES(%s, %s)",
-                   (request.json['UserId'], request.json['EntityId']))
-    data = cursor.fetchall()
-    conn.commit()
-    conn.close()
-    history = {
-        'UserId': request.json['UserId'],
-        'EntityId': request.json['EntityId'],
-    }
-    return jsonify(history), 201
-
-@app.route('/thrifty/api/v1.0/favorites/<uid>', methods=['GET'])
-def get_favorites(uid):
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.execute("Select * from Favorites where UserId = %s", uid)
-    data = cursor.fetchall()
-    conn.commit()
-    conn.close()
-    ret_data = []
-    for i in range(len(data)):
-        temp_data = {
-            "UserId": data[i][0],
-            "EntityId": data[i][1],
-        }
-        ret_data.append(temp_data)
-    return jsonify(ret_data), 201
-
-app.route('/thrifty/api/v1.0/favorites/<uid><eid>', methods=['DELETE'])
-def get_favorites(uid, eid):
-    conn = mysql.connect()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM Favorites WHERE UserId=%s and EntityId=%s", uid, eid)
-    data = cursor.fetchall()
-    conn.commit()
-    conn.close()
-    ret_data = {
-        "UserId": uid,
-        "EntityId": eid
-    }
-    return ret_data, 201
-
-
-# Advanced Function 1
-# @app.route('/thrifty/api/v1.0/suggestion/', methods=['GET'])
-# def get_eamil():
+# @app.route('/thrifty/api/v1.0/favorites/', methods=['POST'])
+# def add_favorite():
 #     conn = mysql.connect()
 #     cursor = conn.cursor()
-#     cursor.execute("Select EntityId from WatchHistory where UserId = %s", uid)
+#     cursor.execute("INSERT INTO Favorites(UserId, EntityId) VALUES(%s, %s)",
+#                    (request.json['UserId'], request.json['EntityId']))
 #     data = cursor.fetchall()
 #     conn.commit()
 #     conn.close()
-#     print(data)
-#     all_results = []
+#     history = {
+#         'UserId': request.json['UserId'],
+#         'EntityId': request.json['EntityId'],
+#     }
+#     return jsonify(history), 201
+
+# @app.route('/thrifty/api/v1.0/favorites/<uid>', methods=['GET'])
+# def get_favorites(uid):
+#     conn = mysql.connect()
+#     cursor = conn.cursor()
+#     cursor.execute("Select * from Favorites where UserId = %s", uid)
+#     data = cursor.fetchall()
+#     conn.commit()
+#     conn.close()
+#     ret_data = []
 #     for i in range(len(data)):
-#         entityId=data[i][0]
-#         entity = Entity.find_one({"_id": entityId})
-#         results = Entity.find({"category": entity["category"]})
-#         all_found = [{
-#             "_id": result["_id"],
-#             "name": result["name"],
-#             "contact": result["contact"],
-#             "area": result["area"],
-#             "description": result["description"],
-#             "seller": result["seller"],
-#             "category": result["category"],
-#             "price": result["price"],
-#             "date": result["date"]
-#         } for result in results]
-#         all_results.append(all_found)
-#     return jsonify(all_results)
+#         temp_data = {
+#             "UserId": data[i][0],
+#             "EntityId": data[i][1],
+#         }
+#         ret_data.append(temp_data)
+#     return jsonify(ret_data), 201
+
+# app.route('/thrifty/api/v1.0/favorites/<uid>/<eid>', methods=['DELETE'])
+# def get_favorites(uid, eid):
+#     conn = mysql.connect()
+#     cursor = conn.cursor()
+#     cursor.execute("DELETE FROM Favorites WHERE UserId=%s and EntityId=%s", uid, eid)
+#     data = cursor.fetchall()
+#     conn.commit()
+#     conn.close()
+#     ret_data = {
+#         "UserId": uid,
+#         "EntityId": eid
+#     }
+#     return ret_data, 201
+
+
+# Advanced Function 1 Helpper
+@app.route('/thrifty/api/v1.0/hottest', methods=['GET'])
+def get_hottest():
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("Select EntityId from Hottest")
+    data = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    results = []
+    for i in range(len(data)):
+        entityId=data[i][0]
+        result = Entity.find_one({"_id": ObjectId(entityId)})
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
+        view = cursor.fetchall()
+        cursor.execute("Select email from Users where id=%s", result["userid"])
+        user = cursor.fetchall()
+        results.append({
+            # "_id": str(result["_id"]),
+            "name": result["name"],
+            "email": user[0][0],
+            "description": result["description"],
+            # "condition": result["condition"],
+            "category": result["category"],
+            "price": result["price"],
+            "views": str(view[0][0])
+            # "picture": result["picture"]
+        })
+    results.sort(key=extractView, reverse=True)
+    return jsonify(results)
+
+def extractView(json):
+    try:
+        return int(json['view'])
+    except KeyError:
+        return 0
 
 # Advanced Function 2
 @app.route('/thrifty/api/v1.0/suggestion/<uid>', methods=['GET'])
 def get_suggestion(uid):
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("Select EntityId from WatchHistory where UserId = %s", uid)
+    # "SELECT       `column`,
+    #          COUNT(`column`) AS `value_occurrence` 
+    # FROM     `my_table`
+    # GROUP BY `column`
+    # ORDER BY `value_occurrence` DESC
+    # LIMIT    1;"
+    cursor.execute("Select Entity, COUNT(Entity) as count from (Select * from WatchHistory where UserId = %s) s group by Entity order by count DESC LIMIT 1", uid)
     data = cursor.fetchall()
     conn.commit()
     conn.close()
@@ -426,17 +518,29 @@ def get_suggestion(uid):
     all_results = []
     for i in range(len(data)):
         entityId=data[i][0]
-        entity = Entity.find_one({"_id": entityId})
-        results = Entity.find({"category": entity["category"]})
-        all_found = [{
-                   
-        } for result in results]
-        all_results.append(all_found)
+        result = Entity.find_one({"_id": ObjectId(entityId)})
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
+        view = cursor.fetchall()
+        cursor.execute("Select email from Users where id=%s", result["userid"])
+        user = cursor.fetchall()
+        all_results.append({
+            # "_id": str(result["_id"]),
+            "name": result["name"],
+            "email": user[0][0],
+            "description": result["description"],
+            # "condition": result["condition"],
+            "category": result["category"],
+            "price": result["price"],
+            "views": str(view[0][0])
+            # "picture": result["picture"]
+        })
     return jsonify(all_results)
 
 
 if __name__ == '__main__':
     # app.debug=True
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0",port=8888)
 
 ## SELECT * FROM Users u JOIN WatchHistory w ON u.id = w.UserId group by EntityId
