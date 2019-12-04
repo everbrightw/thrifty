@@ -76,7 +76,7 @@ def insert_one_entity():
         "description": result["description"],
         "condition": result["condition"],
         "category": result["category"],
-        "price": result["price"],
+        "price": "$"+result["price"],
         "picture": result["picture"]
     }
     return ret
@@ -98,7 +98,7 @@ def insert_many_entity():
             "description": result["description"],
             "condition": result["condition"],
             "category": result["category"],
-            "price": result["price"],
+            "price": "$"+result["price"],
             "picture": result["picture"]
         }
         data.append(ret)
@@ -121,7 +121,7 @@ def delete_entity(input_id):
         "description": result["description"],
         "condition": result["condition"],
         "category": result["category"],
-        "price": result["price"],
+        "price": "$"+result["price"],
         "picture": result["picture"]
     }
     return ret
@@ -152,7 +152,7 @@ def get_all_entities():
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
-            "price": result["price"],
+            "price": "$"+result["price"],
             "views": str(data[0][0])
             # "picture": result["picture"]
         })
@@ -184,7 +184,7 @@ def get_entities_by_category(category):
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
-            "price": result["price"],
+            "price": "$"+result["price"],
             "views": str(data[0][0])
             # "picture": result["picture"]
         })
@@ -216,7 +216,7 @@ def search_item_by_name(name):
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
-            "price": result["price"],
+            "price": "$"+result["price"],
             "views": str(data[0][0])
             # "picture": result["picture"]
         })
@@ -474,7 +474,7 @@ def get_hottest():
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
-            "price": result["price"],
+            "price": "$"+result["price"],
             "views": str(view[0][0])
             # "picture": result["picture"]
         })
@@ -521,7 +521,7 @@ def get_suggestion(uid):
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
-            "price": result["price"],
+            "price": "$"+result["price"],
             "views": str(view[0][0])
             # "picture": result["picture"]
         })
