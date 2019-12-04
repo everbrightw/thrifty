@@ -267,11 +267,11 @@ def check_login():
         abort(404)
     if data[0][0] == request.json['password']:
         data = {
-            'result': 1
+            'result': "isvalid"
         }
         return jsonify(data), 201
     data = {
-        'result': 0
+        'result': "notvalid"
     }
     return jsonify(data), 201
 
@@ -312,7 +312,7 @@ def get_watch_history(uid):
     return jsonify(ret_data), 201
 
 if __name__ == '__main__':
-    app.debug=True
-    app.run(host='0.0.0.0')
+    # app.debug=True
+    app.run(debug=True)
 
 ## SELECT * FROM Users NATRAUL JOIN WatchHistory Where id = userid group by userid
