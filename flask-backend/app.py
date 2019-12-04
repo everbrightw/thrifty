@@ -207,12 +207,15 @@ def search_item_by_name(name):
     for result in results:
         conn = mysql.connect()
         cursor = conn.cursor()
-        cursor.execute("Select Count(*), email from WatchHistory w Join Users u ON u.id=w.UserId where Entity=%s and id=%s" , (str(result["_id"]),result["userid"]))
+        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
         data = cursor.fetchall()
+        cursor.execute("Select email from Users where id=%s", int(result["userid"]))
+        user = cursor.fetchall()
+        print(data)
         all_found.append({
             # "_id": str(result["_id"]),
             "name": result["name"],
-            "email": data[0][1],
+            "email": user[0][0],
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
@@ -504,6 +507,8 @@ def get_suggestion(uid):
     conn.close()
     print(data)
     all_results = []
+    if len(data)==0:
+        return {}
     entityId=data[0][0]
     entity = Entity.find_one({"_id": ObjectId(entityId)})
     results = Entity.find({"category": entity["category"]})
@@ -530,6 +535,6 @@ def get_suggestion(uid):
 
 if __name__ == '__main__':
     # app.debug=True
-    app.run(debug=True, host="0.0.0.0",port=8888)
+    app.run(debug=True, host="0.0.0.0",port=6666)
 
 ## SELECT * FROM Users u JOIN WatchHistory w ON u.id = w.UserId group by EntityId
