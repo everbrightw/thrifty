@@ -207,14 +207,12 @@ def search_item_by_name(name):
     for result in results:
         conn = mysql.connect()
         cursor = conn.cursor()
-        cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
+        cursor.execute("Select Count(*), email from WatchHistory w Join Users u ON u.id=w.UserId where Entity=%s and id=%s" , (str(result["_id"]),result["userid"]))
         data = cursor.fetchall()
-        cursor.execute("Select email from Users where id=%s", result["userid"])
-        user = cursor.fetchall()
         all_found.append({
             # "_id": str(result["_id"]),
             "name": result["name"],
-            "email": user[0][0],
+            "email": data[0][1],
             "description": result["description"],
             # "condition": result["condition"],
             "category": result["category"],
@@ -260,6 +258,17 @@ def get_all_users():
         ret_data.append(temp_data)
     return jsonify(ret_data)
 
+@app.route('/thrifty/api/v1.0/users/delete/<uid>', methods=['DELETE'])
+def delete_user(uid):
+    print(uid)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Users WHERE id=%s",uid)
+    conn.commit()
+    conn.close()
+    ret_data={}
+    return jsonify(ret_data)
+
 @app.route('/thrifty/api/v1.0/users/email/<email>', methods=['GET'])
 def get_uid_by_email(email):
     conn = mysql.connect()
@@ -293,7 +302,7 @@ def insert_user():
     data = cursor.fetchall()
     # Creating the json object based on the object in the request body
     user = {
-        'name': request.json['firstname'] + " " + request.json['firstname'],
+        'name': request.json['firstname'] + " " + request.json['lastname'],
         'email': request.json['email'],
         'password': request.json['password']
     }
@@ -324,35 +333,14 @@ def get_user_by_id(uid):
 
 
 # Updating the information of a user
-@app.route('/thrifty/api/v1.0/users/<uid>', methods=['PUT'])
-def update_users(uid):
+@app.route('/thrifty/api/v1.0/users/<uid>/<password>', methods=['PUT'])
+def update_users(uid, password):
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Users WHERE id=%s", (uid))
-    data = cursor.fetchall()
-    if len(data) == 0:
-        abort(404)
-    data = {
-        'firstname': data[0][1],
-        'lastname': data[0][2],
-        'email': data[0][3],
-        'password': data[0][5],
-        'phone': data[0][4]
-    }
-    if (not request.json) or ((not 'password' in request.json) and (not 'email' in request.json)):
-        abort(400)
-    for key in request.json:
-        print(key)
-        if key == 'email':
-            cursor.execute("UPDATE Users SET email = %s WHERE id = %s", (request.json[key], uid))
-        if key == 'password':
-            cursor.execute("UPDATE Users SET password = %s WHERE id = %s", (request.json[key], uid))
-        if key == 'phone':
-            cursor.execute("UPDATE Users SET phone = %s WHERE id = %s", (request.json[key], uid))
-        data[key] = request.json[key]
+    cursor.execute("UPDATE Users SET password = %s WHERE id = %s", (password, uid))
     conn.commit()
     conn.close()
-    return jsonify(data), 201
+    return {}
 
 # check login
 @app.route('/thrifty/api/v1.0/login/', methods=['POST'])
@@ -516,11 +504,12 @@ def get_suggestion(uid):
     conn.close()
     print(data)
     all_results = []
-    for i in range(len(data)):
-        entityId=data[i][0]
-        result = Entity.find_one({"_id": ObjectId(entityId)})
-        conn = mysql.connect()
-        cursor = conn.cursor()
+    entityId=data[0][0]
+    entity = Entity.find_one({"_id": ObjectId(entityId)})
+    results = Entity.find({"category": entity["category"]})
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    for result in results:
         cursor.execute("Select Count(*) from WatchHistory where Entity=%s", str(result["_id"]))
         view = cursor.fetchall()
         cursor.execute("Select email from Users where id=%s", result["userid"])
